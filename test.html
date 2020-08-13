@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+</head>
+<body>
+
+  <select id="device">
+  <option value="台車Ａ">台車Ａ</option>
+  <option value="台車Ｂ">台車Ｂ</option>
+  <option value="プロジェクター１">プロジェクター１</option>
+  <option value="プロジェクター２">プロジェクター２</option>
+  <option value="ＤＶＤドライブ">ＤＶＤドライブ</option>
+  <option value="nfc">ＮＦＣ</option>
+  </select>
+
+  <select id="status">
+  <option value="move">移動</option>
+  <option value="t001">VFCタッチ001</option>
+  <option value="t002">VFCタッチ002</option>
+  <option value="t003">VFCタッチ003</option>
+  </select>
+
+  <!-- 送信ボタン -->
+  <input type="button" id="send_button"" value="送信">
+
+  <script>
+    // WebSocketのクライアントの生成
+    let ws = new WebSocket('ws://localhost:5001');
+
+    // 接続時に呼ばれる
+    ws.addEventListener('open', e => {
+      console.log('open');
+    })
+
+    // サーバからのデータ受信時に呼ばれる
+    ws.addEventListener('message', e => {
+      //console.log(e.data);
+      let data = JSON.parse(e.data);
+      console.log(data.device, data.status);
+    })
+
+    // ボタンクリック時に呼ばれる
+    document.getElementById('send_button').addEventListener('click', e => {
+      let device = document.getElementById('device').value;
+      let status = document.getElementById('status').value;
+      console.log("device", device, "status", status)
+      // サーバへのデータ送信
+      let data = {device: device, status: status};
+      ws.send(JSON.stringify(data));
+    })
+  </script>
+</body>
+</html>

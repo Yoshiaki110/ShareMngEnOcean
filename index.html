@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+</head>
+<body>
+
+  <table id="myTBL" border="1">
+    <caption>共有物貸し出し管理</caption>
+    <tr bgcolor="#c0ffc0">
+      <th>貸出物</th>
+      <th>状態</th>
+      <th>時刻</th>
+      <th>持ち出し者</th>
+      <th>確認時刻</th>
+    </tr>
+    <tr>
+      <td>台車Ａ</td>
+      <td>有</td>
+      <td></td>
+      <td></td>
+      <td>10:10:00</td>
+    </tr>
+    <tr>
+      <td>台車Ｂ</td>
+      <td>貸出中</td>
+      <td>10:10</td>
+      <td>伊藤</td>
+      <td>10:10:00</td>
+    </tr>
+    <tr>
+      <td>プロジェクター１</td>
+      <td>貸出中</td>
+      <td>10:10</td>
+      <td>伊藤</td>
+      <td>10:10:00</td>
+    </tr>
+    <tr>
+      <td>プロジェクター２</td>
+      <td>貸出中</td>
+      <td>10:10</td>
+      <td>伊藤</td>
+      <td>10:10:00</td>
+    </tr>
+    <tr>
+      <td>ＤＶＤドライブ</td>
+      <td>貸出中</td>
+      <td>10:10</td>
+      <td>伊藤</td>
+      <td>12:34:56</td>
+    </tr>
+  </table>
+
+  <script>
+    console.log('aaaaa', myTBL.rows[0].cells[0].innerText);
+    console.log('行数', myTBL.rows.length);
+    myTBL.rows[1].cells[1].style.backgroundColor = "yellow";
+
+    // WebSocketのクライアントの生成
+    let ws = new WebSocket('ws://localhost:5001');
+
+    // 接続時に呼ばれる
+    ws.addEventListener('open', e => {
+      console.log('open');
+    });
+
+    // サーバからのデータ受信時に呼ばれる
+    ws.addEventListener('message', e => {
+      //console.log(e.data);
+      let data = JSON.parse(e.data);
+      console.log(data.device, data.status);
+      myTBL.rows[0].cells[0].innerText = Math.random();
+      receive(data.device);
+    });
+
+function formatDate(date, format) {
+  format = format.replace(/yyyy/g, date.getFullYear());
+  format = format.replace(/MM/g, ('0' + (date.getMonth() + 1)).slice(-2));
+  format = format.replace(/dd/g, ('0' + date.getDate()).slice(-2));
+  format = format.replace(/HH/g, ('0' + date.getHours()).slice(-2));
+  format = format.replace(/mm/g, ('0' + date.getMinutes()).slice(-2));
+  format = format.replace(/ss/g, ('0' + date.getSeconds()).slice(-2));
+  format = format.replace(/SSS/g, ('00' + date.getMilliseconds()).slice(-3));
+  return format;
+};
+
+function receive(device) {
+  for (let i = 1; i < myTBL.rows.length;i++) {
+    if (myTBL.rows[i].cells[0].innerText === device) {
+      myTBL.rows[i].cells[4].innerText = formatDate(new Date(), 'HH:mm:ss');
+    }
+  }
+};
+
+function periodically() {
+  for (let i = 1; i < myTBL.rows.length;i++) {
+    let data = myTBL.rows[i].cells[4].innerText;
+    if (data.length === 8) {
+      let hh = data.substr(0, 2);
+      let mm = data.substr(3, 2);
+      let ss = data.substr(6, 2);
+      let tm = Number(hh) * 60*60 + Number(mm) * 60 + Number(ss);
+      let date = new Date();
+      let tmNow = date.getHours() * 60*60 + date.getMinutes() * 60 + date.getSeconds();
+      if (tm + 10 < tmNow) {
+        myTBL.rows[i].cells[4].style.backgroundColor = "red";
+      } else {
+        myTBL.rows[i].cells[4].style.backgroundColor = "white";
+      }
+      console.log(tm + 10, '<', tmNow);
+    }
+  }
+  setTimeout(periodically, 1000);
+};
+
+setTimeout(periodically, 1000);
+
+var date = new Date();
+
+console.log(formatDate(date, 'yyyyMMdd')); // "20170102"
+console.log(formatDate(date, 'yyyyMMddHHmmssSSS')); // "20170102030405006"
+console.log(formatDate(date, 'yyyy/MM/dd')); // "2017/01/02"
+console.log(formatDate(date, 'yyyy-MM-dd')); // "2017-01-02"
+console.log(formatDate(date, 'HH:mm')); // "03:04"
+console.log(formatDate(date, 'HH:mm:ss:SSS')); // "03:04:05:006"
+
+  </script>
+</body>
+</html>
