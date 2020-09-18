@@ -74,6 +74,7 @@
       receive(data.device);
     });
 
+// 日付のフォーマット
 function formatDate(date, format) {
   format = format.replace(/yyyy/g, date.getFullYear());
   format = format.replace(/MM/g, ('0' + (date.getMonth() + 1)).slice(-2));
@@ -85,14 +86,17 @@ function formatDate(date, format) {
   return format;
 };
 
+// 受信処理
 function receive(device) {
   for (let i = 1; i < myTBL.rows.length;i++) {
     if (myTBL.rows[i].cells[0].innerText === device) {
+      // 確認時刻の更新
       myTBL.rows[i].cells[4].innerText = formatDate(new Date(), 'HH:mm:ss');
     }
   }
 };
 
+// 定期実行
 function periodically() {
   for (let i = 1; i < myTBL.rows.length;i++) {
     let data = myTBL.rows[i].cells[4].innerText;
