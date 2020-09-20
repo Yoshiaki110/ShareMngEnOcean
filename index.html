@@ -9,53 +9,74 @@
   <table id="myTBL" border="1">
     <caption>共有物貸し出し管理</caption>
     <tr bgcolor="#c0ffc0">
+      <th>ID</th>
       <th>貸出物</th>
-      <th>状態</th>
-      <th>時刻</th>
+      <th>有無</th>
       <th>持ち出し者</th>
-      <th>確認時刻</th>
+      <th>状態</th>
+      <th>NFC時刻</th>
+      <th>振動時刻</th>
+      <th>最終通信時刻</th>
     </tr>
     <tr>
+      <td>carta</td>
       <td>台車Ａ</td>
       <td>有</td>
       <td></td>
       <td></td>
       <td>10:10:00</td>
+      <td>10:10:00</td>
+      <td>10:10:00</td>
     </tr>
     <tr>
+      <td>cartb</td>
       <td>台車Ｂ</td>
       <td>貸出中</td>
-      <td>10:10</td>
       <td>伊藤</td>
+      <td></td>
+      <td>10:10:00</td>
+      <td>10:10:00</td>
       <td>10:10:00</td>
     </tr>
     <tr>
+      <td>prj1</td>
       <td>プロジェクター１</td>
       <td>貸出中</td>
-      <td>10:10</td>
       <td>伊藤</td>
+      <td></td>
+      <td>10:10:00</td>
+      <td>10:10:00</td>
       <td>10:10:00</td>
     </tr>
     <tr>
+      <td>prj2</td>
       <td>プロジェクター２</td>
       <td>貸出中</td>
-      <td>10:10</td>
       <td>伊藤</td>
+      <td></td>
+      <td>10:10:00</td>
+      <td>10:10:00</td>
       <td>10:10:00</td>
     </tr>
     <tr>
+      <td>dvd</td>
       <td>ＤＶＤドライブ</td>
       <td>貸出中</td>
-      <td>10:10</td>
       <td>伊藤</td>
+      <td></td>
+      <td>12:34:56</td>
+      <td>12:34:56</td>
       <td>12:34:56</td>
     </tr>
   </table>
 
   <script>
+    const COLUM_NFC_TIME = 5;
+    const COLUM_VIB_TIME = 6;
+    const COLUM_LAST_TIME = 7;
+
     console.log('aaaaa', myTBL.rows[0].cells[0].innerText);
     console.log('行数', myTBL.rows.length);
-    myTBL.rows[1].cells[1].style.backgroundColor = "yellow";
 
     // WebSocketのクライアントの生成
     let ws = new WebSocket('ws://localhost:5001');
@@ -71,7 +92,7 @@
       let data = JSON.parse(e.data);
       console.log(data.device, data.status);
       myTBL.rows[0].cells[0].innerText = Math.random();
-      receive(data.device);
+      receive(data.device, data.status);
     });
 
 // 日付のフォーマット
@@ -87,19 +108,44 @@ function formatDate(date, format) {
 };
 
 // 受信処理
-function receive(device) {
+function receive(device, status) {
   for (let i = 1; i < myTBL.rows.length;i++) {
     if (myTBL.rows[i].cells[0].innerText === device) {
       // 確認時刻の更新
-      myTBL.rows[i].cells[4].innerText = formatDate(new Date(), 'HH:mm:ss');
+      if (status === 'nfc') {
+        myTBL.rows[i].cells[COLUM_NFC_TIME].innerText = formatDate(new Date(), 'HH:mm:ss');
+      }
+      if (status === 'vib') {
+        myTBL.rows[i].cells[COLUM_VIB_TIME].innerText = formatDate(new Date(), 'HH:mm:ss');
+      }
+      myTBL.rows[i].cells[COLUM_LAST_TIME].innerText = formatDate(new Date(), 'HH:mm:ss');
     }
   }
 };
 
 // 定期実行
+function getTime(data) {
+  let ret = 0;
+  if (data.length === 8) {
+    let hh = data.substr(0, 2);
+    let mm = data.substr(3, 2);
+    let ss = data.substr(6, 2);
+    let ret = Number(hh) * 60*60 + Number(mm) * 60 + Number(ss);
+  }
+  return ret;
+}
+
 function periodically() {
   for (let i = 1; i < myTBL.rows.length;i++) {
-    let data = myTBL.rows[i].cells[4].innerText;
+    let data = myTBL.rows[i].cells[COLUM_NFC_TIME].innerText;     // sakujo
+
+    let strNfc = myTBL.rows[i].cells[COLUM_NFC_TIME].innerText;
+    let strVib = myTBL.rows[i].cells[COLUM_VIB_TIME].innerText;
+    let strLast = myTBL.rows[i].cells[COLUM_LAST_TIME].innerText;
+    let tmNfc = getTime(strNfc);
+    let tmVib = getTime(strVib);
+    let tmLast = getTime(strLast);
+
     if (data.length === 8) {
       let hh = data.substr(0, 2);
       let mm = data.substr(3, 2);
@@ -108,9 +154,9 @@ function periodically() {
       let date = new Date();
       let tmNow = date.getHours() * 60*60 + date.getMinutes() * 60 + date.getSeconds();
       if (tm + 10 < tmNow) {
-        myTBL.rows[i].cells[4].style.backgroundColor = "red";
+        myTBL.rows[i].cells[COLUM_NFC_TIME].style.backgroundColor = "red";
       } else {
-        myTBL.rows[i].cells[4].style.backgroundColor = "white";
+        myTBL.rows[i].cells[COLUM_NFC_TIME].style.backgroundColor = "white";
       }
       console.log(tm + 10, '<', tmNow);
     }
@@ -120,8 +166,8 @@ function periodically() {
 
 setTimeout(periodically, 1000);
 
-var date = new Date();
 
+var date = new Date();
 console.log(formatDate(date, 'yyyyMMdd')); // "20170102"
 console.log(formatDate(date, 'yyyyMMddHHmmssSSS')); // "20170102030405006"
 console.log(formatDate(date, 'yyyy/MM/dd')); // "2017/01/02"

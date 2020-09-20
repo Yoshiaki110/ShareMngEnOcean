@@ -13,3 +13,7 @@ NFCタッチなしで振動後、電波が来なくなったら、勝手に持�
 
 https://www.npmjs.com/package/node-enocean-utils
 
+----
+
+振動時刻　＝　最終通信時刻　＆　現在時刻　－　振動時刻　＞　60秒
+　存在しない

@@ -7,19 +7,23 @@
 <body>
 
   <select id="device">
-  <option value="台車Ａ">台車Ａ</option>
-  <option value="台車Ｂ">台車Ｂ</option>
-  <option value="プロジェクター１">プロジェクター１</option>
-  <option value="プロジェクター２">プロジェクター２</option>
-  <option value="ＤＶＤドライブ">ＤＶＤドライブ</option>
-  <option value="nfc">ＮＦＣ</option>
+  <option value="carta">台車Ａ</option>
+  <option value="cartb">台車Ｂ</option>
+  <option value="prj1">プロジェクター１</option>
+  <option value="prj2">プロジェクター２</option>
+  <option value="dvd">ＤＶＤドライブ</option>
   </select>
 
   <select id="status">
-  <option value="move">移動</option>
-  <option value="t001">VFCタッチ001</option>
-  <option value="t002">VFCタッチ002</option>
-  <option value="t003">VFCタッチ003</option>
+  <option value="vib">振動</option>
+  <option value="novib">無振動</option>
+  <option value="nfc">NFCタッチ</option>
+  </select>
+
+  <select id="value">
+  <option value="伊藤">伊藤</option>
+  <option value="高橋">高橋</option>
+  <option value="山田">山田</option>
   </select>
 
   <!-- 送信ボタン -->
@@ -45,9 +49,10 @@
     document.getElementById('send_button').addEventListener('click', e => {
       let device = document.getElementById('device').value;
       let status = document.getElementById('status').value;
-      console.log("device", device, "status", status)
+      let value = document.getElementById('value').value;
+      console.log("device", device, "status", status, "value", value)
       // サーバへのデータ送信
-      let data = {device: device, status: status};
+      let data = {device: device, status: status, value: value};
       ws.send(JSON.stringify(data));
     })
   </script>
