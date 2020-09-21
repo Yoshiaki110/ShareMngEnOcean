@@ -17,3 +17,16 @@ https://www.npmjs.com/package/node-enocean-utils
 
 振動時刻　＝　最終通信時刻　＆　現在時刻　－　振動時刻　＞　60秒
 　存在しない
+
+------
+
+EnOceanのI/F起動
+  sudo EnOceanGateways/DolphinRide/dpride/dprided.sh
+
+  cd ShareMngEnOcean
+
+カードリーダー起動
+  python cardreader.py
+
+EnOcean起動
+  node enocean.js
