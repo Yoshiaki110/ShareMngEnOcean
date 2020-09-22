@@ -10,43 +10,87 @@ function formatDate(date, format) {
   return format;
 };
 
-function updateById(id) {
+// デバイスの指定地を変更、更新があった場合１を返す
+function setDevice(dst, src) {
+  console.log('-- setDevice', dst, src);
+  if (dst === src) {
+    return 0;
+  }
+  dst = src;
+  return 1;
+}
+
+// 指定デバイスの更新
+function updateById(id, status) {
+  console.log('-- updateById');
+  let upd = 0;
+  let tm = new Date().getTime();
   let device = devices.find(item => item.id === id);
   if (device) {
     device.time = formatDate(new Date(), 'HH:mm:ss');
     console.log('device.time', device.time);
+
+    if (status === 'move') {
+//      upd += setDevice(device.move_t, tm);
+      device.move_t = tm;
+    }
+    if (status === 'keepalive') {
+//      upd += setDevice(device.keepalive_t, tm);
+      device.keepalive_t = tm;
+    }
+//    upd += setDevice(device.update_t, tm);
+    device.update_t = tm;
+    upd = 1;
   }
   let person = persons.find(item => item.id === id);
   if (person) {
     devices[0].user = person.name;
   }
-  updateAll();
-  save();
+  updateAll(upd);
 }
 
-function updateAll() {
+// 全データの更新
+function updateAll(upd) {
+  console.log('-- updateAll', upd);
   for (let i = 0; i < devices.length; i++) {
-    let data = devices[i].time;
-    if (data.length === 8) {
-      let hh = data.substr(0, 2);
-      let mm = data.substr(3, 2);
-      let ss = data.substr(6, 2);
-      let tm = Number(hh) * 60*60 + Number(mm) * 60 + Number(ss);
-      let date = new Date();
-      let tmNow = date.getHours() * 60*60 + date.getMinutes() * 60 + date.getSeconds();
-      if (tm + 40 < tmNow) {
-        devices[i].status = "行方不明";
+//    let data = devices[i].time;
+//    if (data.length === 8) {
+//      let hh = data.substr(0, 2);
+//      let mm = data.substr(3, 2);
+//      let ss = data.substr(6, 2);
+//      let tm = Number(hh) * 60*60 + Number(mm) * 60 + Number(ss);
+//      let date = new Date();
+//      let tmNow = date.getHours() * 60*60 + date.getMinutes() * 60 + date.getSeconds();
+//      if (tm + 40 < tmNow) {
+      if (devices[i].update_t + 40*1000 < new Date().getTime()) {
+//        upd += setDevice(devices[i].status, "行方不明");
+        if (devices[i].status !== "行方不明") {
+          devices[i].status = "行方不明";
+          upd = 1;
+        }
+        console.log('  ', devices[i].status, "行方不明");
       } else {
-        devices[i].status = "有";
-      }
+//        upd += setDevice(devices[i].status, "有");
+        if (devices[i].status !== "有") {
+          devices[i].status = "有";
+          upd = 1;
+        }
+        console.log('  ', devices[i].status, "有");
+//      }
       //console.log(tm + 40, '<', tmNow);
     }
   }
-  console.log(devices);
+  console.log('upd', upd);
+  // 必要であれば通知、保存
+  if(upd) {
+    save();
+  }
 };
 
+// 定期実行
 function periodically() {
-  updateAll();
+  console.log('-- periodically');
+  updateAll(0);
   setTimeout(periodically, 1000);
 };
 
@@ -107,7 +151,7 @@ app.get('/', function (req, res) {
 app.post('/', function (req, res) {
   console.log('http post /', req.body);
   res.json({'msg':'Got a POST request'});
-  updateById(req.body.device);
+  updateById(req.body.device, req.body.status);
   // 全クライアントにデータを返信
   wsAllSend(JSON.stringify(req.body));
 });
