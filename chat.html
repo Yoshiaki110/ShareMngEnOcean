@@ -1,10 +1,13 @@
 <html lang="ja">
 <body>
+  <input type="text" name="say" id="say" placeholder="Input a message here...">
+  <button id="send">Send</button>
+  <button id="nfc">NFC</button>
+  <button id="move">move</button>
+  <button id="keepalive">KeepAlive</button>
   <ul id="chat">
     <li v-for="m in messages">{{ m }}</li>
   </ul>
-  <input type="text" name="say" id="say" placeholder="Input a message here...">
-  <button id="send">Send</button>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.16/vue.min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
@@ -19,9 +22,19 @@
     });
 
     document.getElementById('send').addEventListener('click', function (e) {
-      var say = document.getElementById('say')
+      var say = document.getElementById('say');
       send(say.value);
       say.value = '';
+    });
+
+    document.getElementById('nfc').addEventListener('click', function (e) {
+      nfc();
+    });
+    document.getElementById('move').addEventListener('click', function (e) {
+      move();
+    });
+    document.getElementById('keepalive').addEventListener('click', function (e) {
+      keepalive();
     });
 
 
@@ -30,26 +43,33 @@
 
     client.connect({
       keepAliveInterval: 15,
+      // コネクションできた
       onSuccess:function(){
         console.log("connect success")
+        // 受信した
         client.onMessageArrived = function(message) {
-          console.log(message.payloadString)
-          data.messages.push(message.payloadString);
+          console.log(message.destinationName);
+          //console.log(message.payloadString);
+          let dt = JSON.parse(message.payloadString);
+          
+          data.messages.push(dt.cmd + ' : ' + new Date(dt.dt.time).toString());
         }
+        // 切断された
         client.onConnectionLost = function(message) {
           console.log('onConnectionLost')
         }
+        // 受信する
         client.subscribe('/jp/co/latency/#', {
           onSuccess:function() {
-            console.log("subscribe success")
+            console.log("subscribe success");
           },
           onFailure:function() {
-            console.log("subscribe fail")
+            console.log("subscribe fail");
           }
         })
       },
       onFailure:function(){
-        console.log("connect fail")
+        console.log("connect fail");
       }
     })
 
@@ -57,9 +77,41 @@
       var message = new Paho.MQTT.Message(content);
       message.destinationName = "/jp/co/latency/15";
       client.send(message);
-      console.log("sent");
     }
 
+    function nfc() {
+      let data = {
+        cmd: 'nfc',
+        dt: {
+          time: new Date().getTime()
+        }
+      }
+      var message = new Paho.MQTT.Message(JSON.stringify(data));
+      message.destinationName = "/jp/co/latency/15";
+      client.send(message);
+    }
+    function move() {
+      let data = {
+        cmd: 'move',
+        dt: {
+          time: new Date().getTime()
+        }
+      }
+      var message = new Paho.MQTT.Message(JSON.stringify(data));
+      message.destinationName = "/jp/co/latency/15";
+      client.send(message);
+    }
+    function keepalive() {
+      let data = {
+        cmd: 'keepalive',
+        dt: {
+          time: new Date().getTime()
+        }
+      }
+      var message = new Paho.MQTT.Message(JSON.stringify(data));
+      message.destinationName = "/jp/co/latency/15";
+      client.send(message);
+    }
 
 
   </script>
