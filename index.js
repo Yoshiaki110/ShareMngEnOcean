@@ -1,3 +1,5 @@
+
+
 // 日付のフォーマット
 function formatDate(date, format) {
   format = format.replace(/yyyy/g, date.getFullYear());
@@ -18,6 +20,25 @@ function setDevice(dst, src) {
   }
   dst = src;
   return 1;
+}
+
+// NFCのデータ来たら最近動かしたdeviceがあるか検索
+function nfcArrived(name) {
+  console.log('-- nfcArrived', name);
+  // 最大値（最近の時刻）を取得
+  let idx = -1;
+  let max = 0;
+  for (let i = 0; i < result.length; i++) {
+    if (max < result[i].move_t) {
+      max = result[i].move_t;
+      idx = i;
+    }
+  }
+  if (devs[idx].move_t + 40*1000 < new Date().getTime()) {
+    console.log('-- nfcArrived 1');
+  } else {
+    console.log('-- nfcArrived 2');
+  }
 }
 
 // 指定デバイスの更新
@@ -44,7 +65,7 @@ function updateById(id, status) {
   }
   let person = persons.find(item => item.id === id);
   if (person) {
-    devices[0].user = person.name;
+    nfcArrived(person.name);
   }
   updateAll(upd);
 }
@@ -53,31 +74,18 @@ function updateById(id, status) {
 function updateAll(upd) {
   console.log('-- updateAll', upd);
   for (let i = 0; i < devices.length; i++) {
-//    let data = devices[i].time;
-//    if (data.length === 8) {
-//      let hh = data.substr(0, 2);
-//      let mm = data.substr(3, 2);
-//      let ss = data.substr(6, 2);
-//      let tm = Number(hh) * 60*60 + Number(mm) * 60 + Number(ss);
-//      let date = new Date();
-//      let tmNow = date.getHours() * 60*60 + date.getMinutes() * 60 + date.getSeconds();
-//      if (tm + 40 < tmNow) {
-      if (devices[i].update_t + 40*1000 < new Date().getTime()) {
-//        upd += setDevice(devices[i].status, "行方不明");
-        if (devices[i].status !== "行方不明") {
-          devices[i].status = "行方不明";
-          upd = 1;
-        }
-        console.log('  ', devices[i].status, "行方不明");
-      } else {
-//        upd += setDevice(devices[i].status, "有");
-        if (devices[i].status !== "有") {
-          devices[i].status = "有";
-          upd = 1;
-        }
-        console.log('  ', devices[i].status, "有");
-//      }
-      //console.log(tm + 40, '<', tmNow);
+    if (devices[i].update_t + 40*1000 < new Date().getTime()) {
+      if (devices[i].status !== "行方不明") {
+        devices[i].status = "行方不明";
+        upd = 1;
+      }
+      console.log('  ', devices[i].status, "行方不明");
+    } else {
+      if (devices[i].status !== "有") {
+        devices[i].status = "有";
+        upd = 1;
+      }
+      console.log('  ', devices[i].status, "有");
     }
   }
   console.log('upd', upd);

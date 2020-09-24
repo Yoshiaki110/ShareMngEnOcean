@@ -8,23 +8,25 @@
 
     <table class="table" border="1">
       <thead>
-        <tr>
-          <th>No</th>
-          <th>名前</th>
-          <th>年齢</th>
-          <th>種類</th>
-          <th>好物</th>
-          <th>時刻</th>
+        <tr bgcolor="#c0ffc0">
+          <th>ID</th>
+          <th>貸出物</th>
+          <th>状態</th>
+          <th>持ち出し者</th>
+          <th>NFC時刻</th>
+          <th>振動時刻</th>
+          <th>最終通信時刻</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="item in items">
-          <td>{{ item.no }}</td>
+          <td>{{ item.id }}</td>
           <td>{{ item.name }}</td>
-          <td>{{ item.sex }}</td>
-          <td>{{ item.kind }}</td>
-          <td>{{ item.favorite }}</td>
-          <td>{{ strTime(item.favorite) }}</td>
+          <td>{{ item.status }}</td>
+          <td>{{ item.user }}</td>
+          <td>{{ strTime(item.nfc_t) }}</td>
+          <td>{{ strTime(item.move_t) }}</td>
+          <td>{{ strTime(item.update_t) }}</td>
         </tr>
       </tbody>
     </table>
@@ -47,22 +49,21 @@
       show: false,
       msg: '',
       items: [
-        { no:'1', name:'そら', sex:'♂', age:'8', kind:'キジトラ', favorite:'犬の人形' },
-        { no:'2', name:'りく', sex:'♂', age:'7', kind:'長毛種', favorite:'人間' },
-        { no:'3', name:'うみ', sex:'♀', age:'6', kind:'ミケ', favorite:'高級ウェットフード' },
-        { no:'4', name:'こうめ', sex:'♀', age:'4', kind:'サビ', favorite:'横取りフード' },
       ]
     };
     new Vue({
       el: '#app',
       data: data,
       methods: {
+        // デバッグ用クリックした場合
         click: function () {
           console.log("click");
           this.show = !this.show;
+          client.disconnect();
         },
+        // 日付文字列にする
         strTime: function(t) {
-          return formatDate(new Date(), 'HH:mm:ss');;
+          return formatDate(new Date(t), 'HH:mm:ss');;
         }
       }
     });
@@ -107,11 +108,13 @@
           let dt = JSON.parse(message.payloadString);
           
           data2.messages.push(dt.cmd + ' : ' + new Date(dt.dt.time).toString());
-          if (dt.msg) {
-            data.msg = dt.msg;
-            data.show = true;
+          if (dt.msg === undefined) {
+            ;                              // メッセージが設定されていないときは何もしない
+          } else if (dt.msg === '') {
+            data.show = false;             // メッセージが空白の時は、消す
           } else {
-            data.show = false;
+            data.msg = dt.msg;             // それ以外（メッセージがある）は、表示
+            data.show = true;
           }
           if (dt.dt.items) {
             data.items = dt.dt.items;
@@ -120,6 +123,7 @@
         // 切断された
         client.onConnectionLost = function(message) {
           console.log('onConnectionLost')
+          location.reload(true);
         }
         // 受信する
         client.subscribe('/jp/co/latency/#', {
@@ -152,9 +156,9 @@
     function nfc() {
       let data = {
         cmd: 'nfc',
-        msg: 'んｆｃ',
+        msg: '借りるデバイスを持ち上げてください',
         dt: {
-          time: new Date().getTime()
+          items: []
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
@@ -164,12 +168,11 @@
     function move() {
       let data = {
         cmd: 'move',
-        msg: 'むーぶ',
+        msg: 'NFCをタッチして下さい',
         dt: {
-          time: new Date().getTime(),
           items: [
-            { no:'2', name:'りく', sex:'♂', age:'7', kind:'長毛種', favorite:'人間' },
-            { no:'3', name:'うみ', sex:'♀', age:'6', kind:'ミケ', favorite:'高級ウェットフード' }
+            {id: "0413D2B7", name: "タブレット", status: "有", user: "伊藤", move_t: 1600733262858, nfc_t: 0, keepalive_t: 0, update_t: 1600733626897},
+            {id: "00000007", name: "タブレット", status: "有", user: "菅野", move_t: 0, nfc_t: 1600733262858, keepalive_t: 1600733262858, update_t: 0},
           ]
         }
       }
@@ -180,14 +183,11 @@
     function keepalive() {
       let data = {
         cmd: 'keepalive',
-        msg: '',
+        //msg: '',
         dt: {
-          time: new Date().getTime(),
           items: [
-            { no:'_1', name:'_そら', sex:'_♂', age:'_8', kind:'_キジトラ', favorite:'_犬の人形' },
-            { no:'2', name:'りく', sex:'♂', age:'7', kind:'長毛種', favorite:'人間' },
-            { no:'3', name:'うみ', sex:'♀', age:'6', kind:'ミケ', favorite:'高級ウェットフード' },
-            { no:'4', name:'こうめ', sex:'♀', age:'4', kind:'サビ', favorite:'横取りフード' },
+            {id: "0413D2B7", name: "タブレット", status: "有", user: "伊藤", move_t: 1600733262858, nfc_t: 0, keepalive_t: 0, update_t: 1600733626897},
+            {id: "00000007", name: "タブレット", status: "有", user: "菅野", move_t: 0, nfc_t: 1600733262858, keepalive_t: 1600733262858, update_t: 0},
           ]
         }
       }
