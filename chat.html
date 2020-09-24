@@ -1,5 +1,35 @@
 <html lang="ja">
 <body>
+  <div id="app">
+    <div v-if="show">
+      <h1>{{ msg }}</h1>
+    </div>
+    <button @click="click">ボタン</button>
+
+    <table class="table" border="1">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>名前</th>
+          <th>年齢</th>
+          <th>種類</th>
+          <th>好物</th>
+          <th>時刻</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in items">
+          <td>{{ item.no }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.sex }}</td>
+          <td>{{ item.kind }}</td>
+          <td>{{ item.favorite }}</td>
+          <td>{{ strTime(item.favorite) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <input type="text" name="say" id="say" placeholder="Input a message here...">
   <button id="send">Send</button>
   <button id="nfc">NFC</button>
@@ -12,13 +42,37 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.16/vue.min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
   <script type="text/javascript">
+
     var data = {
+      show: false,
+      msg: '',
+      items: [
+        { no:'1', name:'そら', sex:'♂', age:'8', kind:'キジトラ', favorite:'犬の人形' },
+        { no:'2', name:'りく', sex:'♂', age:'7', kind:'長毛種', favorite:'人間' },
+        { no:'3', name:'うみ', sex:'♀', age:'6', kind:'ミケ', favorite:'高級ウェットフード' },
+        { no:'4', name:'こうめ', sex:'♀', age:'4', kind:'サビ', favorite:'横取りフード' },
+      ]
+    };
+    new Vue({
+      el: '#app',
+      data: data,
+      methods: {
+        click: function () {
+          console.log("click");
+          this.show = !this.show;
+        },
+        strTime: function(t) {
+          return formatDate(new Date(), 'HH:mm:ss');;
+        }
+      }
+    });
+
+    var data2 = {
       messages: []
     };
-
     new Vue({
       el: '#chat',
-      data: data
+      data: data2
     });
 
     document.getElementById('send').addEventListener('click', function (e) {
@@ -43,22 +97,31 @@
 
     client.connect({
       keepAliveInterval: 15,
-      // �R�l�N�V�����ł���
+      // コネクションできた
       onSuccess:function(){
-        console.log("connect success")
-        // ��M����
+        console.log("connect success");
+        // 受信した
         client.onMessageArrived = function(message) {
           console.log(message.destinationName);
           //console.log(message.payloadString);
           let dt = JSON.parse(message.payloadString);
           
-          data.messages.push(dt.cmd + ' : ' + new Date(dt.dt.time).toString());
+          data2.messages.push(dt.cmd + ' : ' + new Date(dt.dt.time).toString());
+          if (dt.msg) {
+            data.msg = dt.msg;
+            data.show = true;
+          } else {
+            data.show = false;
+          }
+          if (dt.dt.items) {
+            data.items = dt.dt.items;
+          }
         }
-        // �ؒf���ꂽ
+        // 切断された
         client.onConnectionLost = function(message) {
           console.log('onConnectionLost')
         }
-        // ��M����
+        // 受信する
         client.subscribe('/jp/co/latency/#', {
           onSuccess:function() {
             console.log("subscribe success");
@@ -74,7 +137,14 @@
     })
 
     function send(content) {
-      var message = new Paho.MQTT.Message(content);
+      let data = {
+        cmd: content,
+        msg: '',
+        dt: {
+          time: new Date().getTime()
+        }
+      }
+      var message = new Paho.MQTT.Message(JSON.stringify(data));
       message.destinationName = "/jp/co/latency/15";
       client.send(message);
     }
@@ -82,6 +152,7 @@
     function nfc() {
       let data = {
         cmd: 'nfc',
+        msg: 'んｆｃ',
         dt: {
           time: new Date().getTime()
         }
@@ -93,8 +164,13 @@
     function move() {
       let data = {
         cmd: 'move',
+        msg: 'むーぶ',
         dt: {
-          time: new Date().getTime()
+          time: new Date().getTime(),
+          items: [
+            { no:'2', name:'りく', sex:'♂', age:'7', kind:'長毛種', favorite:'人間' },
+            { no:'3', name:'うみ', sex:'♀', age:'6', kind:'ミケ', favorite:'高級ウェットフード' }
+          ]
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
@@ -104,14 +180,32 @@
     function keepalive() {
       let data = {
         cmd: 'keepalive',
+        msg: '',
         dt: {
-          time: new Date().getTime()
+          time: new Date().getTime(),
+          items: [
+            { no:'_1', name:'_そら', sex:'_♂', age:'_8', kind:'_キジトラ', favorite:'_犬の人形' },
+            { no:'2', name:'りく', sex:'♂', age:'7', kind:'長毛種', favorite:'人間' },
+            { no:'3', name:'うみ', sex:'♀', age:'6', kind:'ミケ', favorite:'高級ウェットフード' },
+            { no:'4', name:'こうめ', sex:'♀', age:'4', kind:'サビ', favorite:'横取りフード' },
+          ]
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
       message.destinationName = "/jp/co/latency/15";
       client.send(message);
     }
+
+    function formatDate(date, format) {
+      format = format.replace(/yyyy/g, date.getFullYear());
+      format = format.replace(/MM/g, ('0' + (date.getMonth() + 1)).slice(-2));
+      format = format.replace(/dd/g, ('0' + date.getDate()).slice(-2));
+      format = format.replace(/HH/g, ('0' + date.getHours()).slice(-2));
+      format = format.replace(/mm/g, ('0' + date.getMinutes()).slice(-2));
+      format = format.replace(/ss/g, ('0' + date.getSeconds()).slice(-2));
+      format = format.replace(/SSS/g, ('00' + date.getMilliseconds()).slice(-3));
+      return format;
+    };
 
 
   </script>
