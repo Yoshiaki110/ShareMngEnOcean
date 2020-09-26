@@ -28,41 +28,22 @@ function nfcArrived(name) {
   // 最大値（最近の時刻）を取得
   let idx = -1;
   let max = 0;
-  for (let i = 0; i < result.length; i++) {
-    if (max < result[i].move_t) {
-      max = result[i].move_t;
+  for (let i = 0; i < devices.length; i++) {
+    if (max < devices[i].move_t) {
+      max = devices[i].move_t;
       idx = i;
     }
   }
-  if (devs[idx].move_t + 40*1000 < new Date().getTime()) {
-    console.log('-- nfcArrived 1');
-  } else {
-    console.log('-- nfcArrived 2');
+  if (devices[idx].move_t + 40*1000 > new Date().getTime()) {
+    devices[idx].user = name;
+    return 1;
   }
+  return 0;
 }
 
 // 指定デバイスの更新
-function checkNFC(id) {
-  for (let i = 0; i < devices.length; i++) {
-    if (devices[i].update_t + 40*1000 < new Date().getTime()) {
-      if (devices[i].status !== "行方不明") {
-        devices[i].status = "行方不明";
-        upd = 1;
-      }
-      console.log('  ', devices[i].status, "行方不明");
-    } else {
-      if (devices[i].status !== "有") {
-        devices[i].status = "有";
-        upd = 1;
-      }
-      console.log('  ', devices[i].status, "有");
-    }
-  }
-}
-
-// 指定デバイスの更新
-function updateById(id, status) {
-  console.log('-- updateById');
+function updateDevice(id, status) {
+  console.log('-- updateDevice');
   let upd = 0;
   let tm = new Date().getTime();
   // EnOceanからの通知
@@ -83,42 +64,57 @@ function updateById(id, status) {
     device.update_t = tm;
     upd = 1;
   }
+  updateAll(upd);
+}
+
+// 指定NFCの更新
+function updateNfc(id) {
+  console.log('-- updateNfc');
+  let upd = 0;
+  let tm = new Date().getTime();
   // NFCからの通知
   let person = persons.find(item => item.id === id);
   if (person) {
-    nfcArrived(person.name);
+    upd = nfcArrived(person.name);
   }
   updateAll(upd);
 }
 
 // 全データの更新
 function updateAll(upd) {
-  console.log('-- updateAll', upd);
+//  console.log('-- updateAll', upd);
   for (let i = 0; i < devices.length; i++) {
     if (devices[i].update_t + 40*1000 < new Date().getTime()) {
       if (devices[i].status !== "行方不明") {
         devices[i].status = "行方不明";
         upd = 1;
       }
-      console.log('  ', devices[i].status, "行方不明");
+//      console.log('  ', devices[i].status, "行方不明");
     } else {
       if (devices[i].status !== "有") {
         devices[i].status = "有";
         upd = 1;
       }
-      console.log('  ', devices[i].status, "有");
+//      console.log('  ', devices[i].status, "有");
     }
   }
-  console.log('upd', upd);
+//  console.log('upd', upd);
   // 必要であれば通知、保存
   if(upd) {
     save();
+    let data = {
+      dt: {
+        items: devices
+      }
+    };
+    publish(data);
+    wsAllSend(data)
   }
 }
 
 // 定期実行
 function periodically() {
-  console.log('-- periodically');
+//  console.log('-- periodically');
   updateAll(0);
   setTimeout(periodically, 1000);
 }
@@ -140,17 +136,25 @@ function save() {
 var mqtt = require('mqtt')
 var client  = mqtt.connect('mqtt://mqtt.eclipse.org')
 
+function publish(data) {
+  let msg = JSON.stringify(data);
+  client.publish('/jp/co/smeo/console', msg);
+}
+
 client.on('connect', function () {
-  client.subscribe('/jp/co/smeo/#')
+  client.subscribe('/jp/co/smeo/#');
 })
 
 client.on('message', function (topic, message) {
-  console.log(topic, message.toString())
+//  console.log('mqtt msg arruved', message);
+  console.log(topic, message.toString());
   let dt = JSON.parse(message.toString());
   if (topic === '/jp/co/smeo/enocean') {
-    console.log('enocean id', dt.dt.id)
+    console.log('enocean id', dt.dt.id);
+    updateDevice(dt.dt.id, dt.cmd);
   } else if (topic === '/jp/co/smeo/nfc') {
-    console.log('nfc id', dt.dt.id)
+    console.log('nfc id', dt.dt.id);
+    updateNfc(dt.dt.id);
   }
 })
 
@@ -158,28 +162,38 @@ client.on('message', function (topic, message) {
 // WebSocketのサーバの生成
 let ws = require('ws')
 var server = new ws.Server({port:5001});
+//console.log('ws server', server);
 
 // 全クライアントにデータを送信
 function wsAllSend(message) {
+  let msg = JSON.stringify(message)
   server.clients.forEach(client => {
-    console.log('ws snd', message);
-    client.send(message);
+    console.log('ws snd', msg);
+    client.send(msg);
   });
 }
 
 // 接続時に呼ばれる
 server.on('connection', ws => {
+  console.log('ws connect');
   // クライアントからのデータ受信時に呼ばれる
   ws.on('message', message => {
     console.log('ws rcv', message);
     // 全クライアントにデータを返信
-    wsAllSend(message);
+    //wsAllSend(message);
   });
 
   // 切断時に呼ばれる
   ws.on('close', () => {
     console.log('ws cls');
   });
+
+  let data = {
+    dt: {
+      items: devices
+    }
+  };
+  wsAllSend(data);
 });
 
 
@@ -198,9 +212,9 @@ app.get('/', function (req, res) {
 app.post('/', function (req, res) {
   console.log('http post /', req.body);
   res.json({'msg':'Got a POST request'});
-  updateById(req.body.device, req.body.status);
+  updateDevice(req.body.device, req.body.status);
   // 全クライアントにデータを返信
-  wsAllSend(JSON.stringify(req.body));
+  //wsAllSend(JSON.stringify(req.body));
 });
 
 app.listen(app.get('port'), function() {

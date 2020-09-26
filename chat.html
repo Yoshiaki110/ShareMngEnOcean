@@ -9,9 +9,10 @@
     <div v-if="show">
       <h1>{{ msg }}</h1>
     </div>
-    <button @click="click">ボタン</button>
+    <button @click="click">dis connect</button>
 
     <table class="table" border="1">
+      <caption>共有物貸し出し管理</caption>
       <thead>
         <tr bgcolor="#c0ffc0">
           <th>ID</th>
@@ -100,50 +101,58 @@
 
     var clientId = Math.random().toString(36).substring(7);
     var client = new Paho.MQTT.Client("mqtt.eclipse.org", 80, clientId);
+//    var client = new Paho.MQTT.Client("test.mosquitto.org", 80, clientId);
+//    var client = new Paho.MQTT.Client("broker.hivemq.com", 80, clientId);
+//    var client = new Paho.MQTT.Client("iot.eclipse.org", 80, clientId);
 
     client.connect({
       keepAliveInterval: 15,
       // コネクションできた
       onSuccess:function(){
-        console.log("connect success");
+        console.log("mqtt connect success");
         // 受信した
         client.onMessageArrived = function(message) {
           console.log(message.destinationName);
           //console.log(message.payloadString);
           let dt = JSON.parse(message.payloadString);
-          
-          data2.messages.push(dt.cmd + ' : ' + new Date(dt.dt.time).toString());
-          if (dt.msg === undefined) {
-            ;                              // メッセージが設定されていないときは何もしない
-          } else if (dt.msg === '') {
-            data.show = false;             // メッセージが空白の時は、消す
-          } else {
-            data.msg = dt.msg;             // それ以外（メッセージがある）は、表示
-            data.show = true;
-          }
-          if (dt.dt.items) {
-            data.items = dt.dt.items;
-          }
+          receive(dt);
         }
         // 切断された
         client.onConnectionLost = function(message) {
-          console.log('onConnectionLost')
+          console.log('mqtt onConnectionLost')
           location.reload(true);
         }
         // 受信する
-        client.subscribe('/jp/co/latency/#', {
+        client.subscribe('/jp/co/smeo/console', {
           onSuccess:function() {
-            console.log("subscribe success");
+            console.log("mqtt subscribe success");
           },
           onFailure:function() {
-            console.log("subscribe fail");
+            console.log("mqtt subscribe fail");
           }
         })
       },
       onFailure:function(){
-        console.log("connect fail");
+        console.log("mqtt connect fail");
       }
     })
+
+    function receive(dt) {
+      data2.messages.push(dt.cmd);
+      if (dt.msg === undefined) {
+        ;                              // メッセージが設定されていないときは何もしない
+      } else if (dt.msg === '') {
+        data.show = false;             // メッセージが空白の時は、消す
+      } else {
+        data.msg = dt.msg;             // それ以外（メッセージがある）は、表示
+        data.show = true;
+      }
+      if (dt.dt.items) {
+        data.items = dt.dt.items;
+      }
+      
+    }
+
 
     function send(content) {
       let data = {
@@ -154,35 +163,32 @@
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
-      message.destinationName = "/jp/co/latency/15";
+      message.destinationName = "/jp/co/smeo/console";
       client.send(message);
     }
 
     function nfc() {
       let data = {
         cmd: 'nfc',
-        msg: '借りるデバイスを持ち上げてください',
         dt: {
-          items: []
+          id: '01071B2B00021601'
+//          id: '010D0CCE003E1001'
+//          id: '10E805C510040101'
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
-      message.destinationName = "/jp/co/latency/15";
+      message.destinationName = "/jp/co/smeo/nfc";
       client.send(message);
     }
     function move() {
       let data = {
         cmd: 'move',
-        msg: 'NFCをタッチして下さい',
         dt: {
-          items: [
-            {id: "0413D2B7", name: "タブレット", status: "有", user: "伊藤", move_t: 1600733262858, nfc_t: 0, keepalive_t: 0, update_t: 1600733626897},
-            {id: "00000007", name: "タブレット", status: "有", user: "菅野", move_t: 0, nfc_t: 1600733262858, keepalive_t: 1600733262858, update_t: 0},
-          ]
+          id: '0413D2B7'
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
-      message.destinationName = "/jp/co/latency/15";
+      message.destinationName = "/jp/co/smeo/enocean";
       client.send(message);
     }
     function keepalive() {
@@ -190,14 +196,11 @@
         cmd: 'keepalive',
         //msg: '',
         dt: {
-          items: [
-            {id: "0413D2B7", name: "タブレット", status: "有", user: "伊藤", move_t: 1600733262858, nfc_t: 0, keepalive_t: 0, update_t: 1600733626897},
-            {id: "00000007", name: "タブレット", status: "有", user: "菅野", move_t: 0, nfc_t: 1600733262858, keepalive_t: 1600733262858, update_t: 0},
-          ]
+          id: '0413D2B7'
         }
       }
       var message = new Paho.MQTT.Message(JSON.stringify(data));
-      message.destinationName = "/jp/co/latency/15";
+      message.destinationName = "/jp/co/smeo/enocean";
       client.send(message);
     }
 
@@ -212,6 +215,22 @@
       return format;
     };
 
+    // WebSocketのクライアントの生成
+    let ws = new WebSocket('ws://localhost:5001');
+
+    // 接続時に呼ばれる
+    ws.addEventListener('open', e => {
+      console.log('ws open');
+    });
+
+    // サーバからのデータ受信時に呼ばれる
+    ws.addEventListener('message', e => {
+      //console.log(e.data);
+      let data = JSON.parse(e.data);
+      //console.log(data.device, data.status);
+      console.log('ws data', data);
+      receive(data);
+    });
 
   </script>
 </body>
