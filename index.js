@@ -42,10 +42,30 @@ function nfcArrived(name) {
 }
 
 // 指定デバイスの更新
+function checkNFC(id) {
+  for (let i = 0; i < devices.length; i++) {
+    if (devices[i].update_t + 40*1000 < new Date().getTime()) {
+      if (devices[i].status !== "行方不明") {
+        devices[i].status = "行方不明";
+        upd = 1;
+      }
+      console.log('  ', devices[i].status, "行方不明");
+    } else {
+      if (devices[i].status !== "有") {
+        devices[i].status = "有";
+        upd = 1;
+      }
+      console.log('  ', devices[i].status, "有");
+    }
+  }
+}
+
+// 指定デバイスの更新
 function updateById(id, status) {
   console.log('-- updateById');
   let upd = 0;
   let tm = new Date().getTime();
+  // EnOceanからの通知
   let device = devices.find(item => item.id === id);
   if (device) {
     device.time = formatDate(new Date(), 'HH:mm:ss');
@@ -63,6 +83,7 @@ function updateById(id, status) {
     device.update_t = tm;
     upd = 1;
   }
+  // NFCからの通知
   let person = persons.find(item => item.id === id);
   if (person) {
     nfcArrived(person.name);
@@ -93,14 +114,14 @@ function updateAll(upd) {
   if(upd) {
     save();
   }
-};
+}
 
 // 定期実行
 function periodically() {
   console.log('-- periodically');
   updateAll(0);
   setTimeout(periodically, 1000);
-};
+}
 
 setTimeout(periodically, 1000);
 
@@ -114,6 +135,24 @@ function save() {
   fs.writeFileSync('./devices.json', JSON.stringify(devices, null, '  '));
   console.log(devices);
 }
+
+// MQTTサーバの生成
+var mqtt = require('mqtt')
+var client  = mqtt.connect('mqtt://mqtt.eclipse.org')
+
+client.on('connect', function () {
+  client.subscribe('/jp/co/smeo/#')
+})
+
+client.on('message', function (topic, message) {
+  console.log(topic, message.toString())
+  let dt = JSON.parse(message.toString());
+  if (topic === '/jp/co/smeo/enocean') {
+    console.log('enocean id', dt.dt.id)
+  } else if (topic === '/jp/co/smeo/nfc') {
+    console.log('nfc id', dt.dt.id)
+  }
+})
 
 
 // WebSocketのサーバの生成

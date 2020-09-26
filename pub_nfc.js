@@ -1,18 +1,15 @@
 console.error ("*** 開始 ***")
 var mqtt = require('mqtt')
 var client  = mqtt.connect('mqtt://mqtt.eclipse.org')
-const topic = '/jp/co/latency/15'
+const topic = '/jp/co/smeo/nfc'
 
 client.on('connect', function () {
   let data = {
-    cmd: 'こんにちは',
-    msg: '',
+    cmd: 'nfc',
     dt: {
-      time: new Date().getTime(),
-      items: [
-        { no:'_1', name:'_そら', sex:'_♂', age:'_8', kind:'_キジトラ', favorite:'_犬の人形' },
-        { no:'4', name:'こうめ', sex:'♀', age:'4', kind:'サビ', favorite:'横取りフード' },
-      ]
+      id: '01071B2B00021601'
+//      id: '010D0CCE003E1001'
+//      id: '10E805C510040101'
     }
   }
   let msg = JSON.stringify(data);
