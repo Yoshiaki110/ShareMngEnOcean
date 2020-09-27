@@ -34,9 +34,22 @@ function nfcArrived(name) {
       idx = i;
     }
   }
-  if (devices[idx].move_t + 40*1000 > new Date().getTime()) {
+  let tm = new Date().getTime();
+  if (devices[idx].move_t + 40*1000 > tm) {
     devices[idx].user = name;
+    console.log("***1");
+    devices[idx].status = '貸出中';
+    devices[idx].nfc_t = tm;
+    let data = {
+      msg: ''
+    };
+    wsAllSend(data);
     return 1;
+  } else {
+    let data = {
+      msg: '貸出物を動かしてからNFCをタッチしてください'
+    };
+    wsAllSend(data);
   }
   return 0;
 }
@@ -61,6 +74,16 @@ function updateDevice(id, status) {
       device.keepalive_t = tm;
     }
 //    upd += setDevice(device.update_t, tm);
+    if (device.status !== '貸出中') {
+      device.status = '有';
+      device.user = '';
+    } else {
+      // NFCタッチ後しばらくは、電波が来ても、有にしない
+      if (device.nfc_t + 40*1000 < new Date().getTime()) {
+        device.status = '有';
+        device.user = '';
+      }
+    }
     device.update_t = tm;
     upd = 1;
   }
@@ -80,22 +103,17 @@ function updateNfc(id) {
   updateAll(upd);
 }
 
-// 全データの更新
+// 40秒以上KeepAliveが来ないと行方不明にする
 function updateAll(upd) {
 //  console.log('-- updateAll', upd);
   for (let i = 0; i < devices.length; i++) {
     if (devices[i].update_t + 40*1000 < new Date().getTime()) {
-      if (devices[i].status !== "行方不明") {
-        devices[i].status = "行方不明";
-        upd = 1;
+      if (devices[i].status !== "貸出中") {
+        if (devices[i].status !== "行方不明") {
+          devices[i].status = "行方不明";
+          upd = 1;
+        }
       }
-//      console.log('  ', devices[i].status, "行方不明");
-    } else {
-      if (devices[i].status !== "有") {
-        devices[i].status = "有";
-        upd = 1;
-      }
-//      console.log('  ', devices[i].status, "有");
     }
   }
 //  console.log('upd', upd);
@@ -108,7 +126,7 @@ function updateAll(upd) {
       }
     };
     publish(data);
-    wsAllSend(data)
+    wsAllSend(data);
   }
 }
 
