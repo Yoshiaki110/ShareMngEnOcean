@@ -28,7 +28,8 @@
         <tr v-for="item in items">
           <td>{{ item.id }}</td>
           <td>{{ item.name }}</td>
-          <td>{{ item.status }}</td>
+          <td v-if="item.status === '行方不明'" bgcolor="#ff33ff">{{ item.status }}</td>
+          <td v-else>{{ item.status }}</td>
           <td>{{ item.user }}</td>
           <td>{{ strTime(item.nfc_t) }}</td>
           <td>{{ strTime(item.move_t) }}</td>
@@ -69,7 +70,7 @@
         },
         // 日付文字列にする
         strTime: function(t) {
-          return formatDate(new Date(t), 'HH:mm:ss');;
+          return formatDate(new Date(t), 'HH:mm:ss');
         }
       }
     });
@@ -146,6 +147,7 @@
       } else {
         data.msg = dt.msg;             // それ以外（メッセージがある）は、表示
         data.show = true;
+        setTimeout(function() {data.show = false;}, 10000);
       }
       if (dt.dt.items) {
         data.items = dt.dt.items;
@@ -219,12 +221,12 @@
     let ws = new WebSocket('ws://localhost:5001');
 
     // 接続時に呼ばれる
-    ws.addEventListener('open', e => {
+    ws.addEventListener('open', function(e) {
       console.log('ws open');
     });
 
     // サーバからのデータ受信時に呼ばれる
-    ws.addEventListener('message', e => {
+    ws.addEventListener('message', function(e) {
       //console.log(e.data);
       let data = JSON.parse(e.data);
       //console.log(data.device, data.status);

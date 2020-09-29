@@ -1,9 +1,18 @@
-if (process.argv.length !== 3 || (process.argv[2] !== 'k' && process.argv[2] !== 'm')) {
-  console.log('usage node pub_enocean {k|m}');
-  console.log('    k(eepalive)');
-  console.log('    m(ove)');
+if (process.argv.length !== 4 || (process.argv[2] !== 'i' && process.argv[2] !== 'g' && process.argv[2] !== 'x') || (process.argv[3] !== 'k' && process.argv[3] !== 'm')) {
+  console.log('usage node pub_enocean {i|g|e} {k|m}');
+  console.log('    i(phone) k(eepalive)');
+  console.log('    g(alaxy) m(ove)');
+  console.log('    x(peria)');
   process.exit(1);
 }
+
+let id = '0413D2B7';
+if (process.argv[2] === 'g') {
+  id = '0413D2B8';
+} else if (process.argv[2] === 'x') {
+  id = '0413D2B9';
+}
+
 let cmd = process.argv[2] === 'k' ? 'keepalive' : 'move';
 
 
@@ -16,7 +25,7 @@ client.on('connect', function () {
   let data = {
     cmd: cmd,
     dt: {
-      id: '0413D2B7'
+      id: id
     }
   }
   let msg = JSON.stringify(data);
