@@ -103,6 +103,24 @@ function updateNfc(id) {
   updateAll(upd);
 }
 
+// iPhoneからの更新
+// http://localhost:5000/rend?0413D2B8&10E805C510040101
+function rend(did, uid) {
+  console.log('-- rend');
+  let person = persons.find(item => item.id === uid);
+  if (person) {
+    let device = devices.find(item => item.id === did);
+    if (device) {
+      device.status = '貸出中';
+      device.user = person.name;
+      device.nfc_t = new Date().getTime();
+      updateAll(1);
+      return [device.name, person.name];
+    }
+  }
+  return null;
+}
+
 // 40秒以上KeepAliveが来ないと行方不明にする
 function updateAll(upd) {
 //  console.log('-- updateAll', upd);
@@ -224,6 +242,23 @@ app.use(express.json());
 app.get('/', function (req, res) {
   console.log('http get /', req.body);
   res.sendFile(__dirname + "/index.html");
+});
+
+// 
+app.get('/rend', function (req, res) {
+  console.log('http get /do', req.url);
+  var body = '';
+  let arr = req.url.substr(6).split('&');
+  if (arr.length === 2) {
+    let [dname, uname] = rend(arr[0], arr[1]);
+    body = '貸し出しOKです。<br>' + dname + '<br>' +  uname;
+  } else {
+    body = 'エラーが発生しました';
+  }
+
+  var head = fs.readFileSync("./rend-h.html", 'utf8');
+  var tail = fs.readFileSync("./rend-t.html", 'utf8');
+  res.send(head + body + tail);
 });
 
 // curl http://172.28.31.48:5000 -X POST -H "Content-Type: application/json" -d '{"device":"台車Ｂ","status":"move"}'
