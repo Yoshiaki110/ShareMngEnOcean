@@ -43,13 +43,15 @@ function nfcArrived(name) {
     let data = {
       msg: ''
     };
-    wsAllSend(data);
+    publish(data);
+//    wsAllSend(data);
     return 1;
   } else {
     let data = {
       msg: '貸出物を動かしてからNFCをタッチしてください'
     };
-    wsAllSend(data);
+    publish(data);
+//    wsAllSend(data);
   }
   return 0;
 }
@@ -144,7 +146,7 @@ function updateAll(upd) {
       }
     };
     publish(data);
-    wsAllSend(data);
+//    wsAllSend(data);
   }
 }
 
@@ -194,7 +196,7 @@ client.on('message', function (topic, message) {
   }
 })
 
-
+/*
 // WebSocketのサーバの生成
 let ws = require('ws')
 var server = new ws.Server({port:5001});
@@ -231,7 +233,7 @@ server.on('connection', ws => {
   };
   wsAllSend(data);
 });
-
+*/
 
 // HTTPサーバの生成
 const express = require('express');

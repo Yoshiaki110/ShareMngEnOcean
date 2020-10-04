@@ -114,7 +114,7 @@
         // 受信した
         client.onMessageArrived = function(message) {
           console.log(message.destinationName);
-          //console.log(message.payloadString);
+          console.log(message.payloadString);
           let dt = JSON.parse(message.payloadString);
           receive(dt);
         }
@@ -139,6 +139,7 @@
     })
 
     function receive(dt) {
+      console.log("receive 1 dt.msg", dt.msg, dt.items);
       data2.messages.push(dt.cmd);
       if (dt.msg === undefined) {
         ;                              // メッセージが設定されていないときは何もしない
@@ -149,10 +150,9 @@
         data.show = true;
         setTimeout(function() {data.show = false;}, 10000);
       }
-      if (dt.dt.items) {
+      if (dt.dt && dt.dt.items) {
         data.items = dt.dt.items;
       }
-      
     }
 
 
@@ -216,7 +216,7 @@
       format = format.replace(/SSS/g, ('00' + date.getMilliseconds()).slice(-3));
       return format;
     };
-
+/*
     // WebSocketのクライアントの生成
     let ws = new WebSocket('ws://localhost:5001');
 
@@ -233,7 +233,7 @@
       console.log('ws data', data);
       receive(data);
     });
-
+*/
   </script>
 </body>
 </html>
