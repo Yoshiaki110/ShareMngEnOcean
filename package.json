@@ -1,27 +1,18 @@
 {
-  "name": "ShareMngEnOcean",
+  "name": "sharemngenocean-",
   "version": "1.0.0",
-  "description": "EnOcean",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Yoshiaki110/ShareMngEnOcean.git"
-  },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Yoshiaki110/ShareMngEnOcean/issues"
-  },
-  "homepage": "https://github.com/Yoshiaki110/ShareMngEnOcean#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "request": "^2.88.2",
     "mqtt": "^4.2.1",
+    "request": "^2.88.2",
     "ws": "^7.3.1"
   },
   "engines": {
