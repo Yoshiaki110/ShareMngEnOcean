@@ -45,7 +45,13 @@ client.on("data", function(data) {
   let id = obj.dataTelegram.deviceId;
   //console.log(obj.dataTelegram.functions);
   //console.log(obj.dataTelegram.functions.find(item => item.key === 'CO'));
-  send(id, 'move');
+  let as = obj.dataTelegram.functions.find(item => item.key === 'AS');
+  console.log("as",as.value);
+  if (as.value === '0') {
+    send(id, 'keepalive');
+  } else {
+    send(id, 'move');
+  }
 });
 
 client.on("close", function() {

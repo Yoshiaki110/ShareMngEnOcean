@@ -4,11 +4,25 @@ from __future__ import print_function
 from time import sleep
 from ctypes import *
 import requests
+import paho.mqtt.client as mqtt
 import json
 
+client = mqtt.Client(protocol=mqtt.MQTTv311)
+client.connect('mqtt.eclipse.org', 1883, 60)
+
 def send(id):
+  data = {
+    'cmd': 'nfc',
+    'dt': {
+      'id': id
+    }
+  }
+  client.publish("/jp/co/smeo/nfc", json.dumps(data))
+  sleep(2)
+
+def send_old(id):
   response = requests.post(
-    'https://sharemngenocean.herokuapp.com/',
+    'http://192.168.0.125:5000',
     headers={'Content-Type': 'application/json'},
     data=json.dumps({"device": id, "status": "nfc"}),
   )
