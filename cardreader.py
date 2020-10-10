@@ -8,7 +8,6 @@ import paho.mqtt.client as mqtt
 import json
 
 client = mqtt.Client(protocol=mqtt.MQTTv311)
-client.connect('mqtt.eclipse.org', 1883, 60)
 
 def send(id):
   data = {
@@ -17,7 +16,9 @@ def send(id):
       'id': id
     }
   }
+  client.connect('mqtt.eclipse.org', 1883, 60)
   client.publish("/jp/co/smeo/nfc", json.dumps(data))
+  client.disconnect()
   sleep(2)
 
 def send_old(id):
