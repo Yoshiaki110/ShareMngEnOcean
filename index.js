@@ -172,29 +172,40 @@ function save() {
 
 // MQTTサーバの生成
 var mqtt = require('mqtt')
-var client  = mqtt.connect('mqtt://mqtt.eclipse.org')
+var client = null;
+function mqttConnect() {
+  client = mqtt.connect('mqtt://mqtt.eclipse.org')
+
+  client.on('connect', function () {
+    client.subscribe('/jp/co/smeo/#');
+    let data = {
+      dt: {
+        items: devices
+      }
+    };
+    publish(data);
+  })
+
+  client.on('message', function (topic, message) {
+//    console.log('mqtt msg arruved', message);
+    console.log(topic, message.toString());
+    let dt = JSON.parse(message.toString());
+    if (topic === '/jp/co/smeo/enocean') {
+      console.log('enocean id', dt.dt.id);
+      updateDevice(dt.dt.id, dt.cmd);
+    } else if (topic === '/jp/co/smeo/nfc') {
+      console.log('nfc id', dt.dt.id);
+      updateNfc(dt.dt.id);
+    }
+  })
+}
 
 function publish(data) {
   let msg = JSON.stringify(data);
   client.publish('/jp/co/smeo/console', msg);
 }
 
-client.on('connect', function () {
-  client.subscribe('/jp/co/smeo/#');
-})
-
-client.on('message', function (topic, message) {
-//  console.log('mqtt msg arruved', message);
-  console.log(topic, message.toString());
-  let dt = JSON.parse(message.toString());
-  if (topic === '/jp/co/smeo/enocean') {
-    console.log('enocean id', dt.dt.id);
-    updateDevice(dt.dt.id, dt.cmd);
-  } else if (topic === '/jp/co/smeo/nfc') {
-    console.log('nfc id', dt.dt.id);
-    updateNfc(dt.dt.id);
-  }
-})
+mqttConnect();
 
 /*
 // WebSocketのサーバの生成
@@ -244,6 +255,7 @@ app.use(express.json());
 app.get('/', function (req, res) {
   console.log('http get /', req.body);
   res.sendFile(__dirname + "/index.html");
+  setTimeout(mqttConnect, 1000);
 });
 
 // 

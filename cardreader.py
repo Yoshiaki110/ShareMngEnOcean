@@ -8,7 +8,7 @@ import json
 
 def send(id):
   response = requests.post(
-    'http://192.168.0.125:5000',
+    'https://sharemngenocean.herokuapp.com/',
     headers={'Content-Type': 'application/json'},
     data=json.dumps({"device": id, "status": "nfc"}),
   )

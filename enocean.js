@@ -3,7 +3,7 @@
 const net = require("net");
 const request = require('request');
 
-const uri = "http://192.168.0.125:5000/";
+const uri = "https://sharemngenocean.herokuapp.com/";
 const host = "127.0.0.1";
 const port = 8000;
 
