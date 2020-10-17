@@ -19,6 +19,22 @@ https://www.npmjs.com/package/node-enocean-utils
 　存在しない
 
 ------
+iPhone		加藤
+https://sharemngenocean.herokuapp.com/rend?0413D2B7&10E805C510040101
+
+
+Galaxy S20		加藤
+https://sharemngenocean.herokuapp.com/rend?0413D2B8&10E805C510040101
+
+Xperia 5		佐藤
+https://sharemngenocean.herokuapp.com/rend?0413D2B9&010D0CCE003E1001
+
+---------
+CITS	伊藤
+INC		佐藤
+---------------
+
+
 
 EnOceanのI/F起動
   sudo EnOceanGateways/DolphinRide/dpride/dprided.sh
